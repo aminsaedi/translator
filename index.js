@@ -21,8 +21,7 @@ async function test() {
     const missings = [];
 
     enKeys.forEach((enKey) => {
-        if (!frKeys.includes(enKey))
-            missings.push({ enKey, enIndex: enKeys.indexOf(enKey) });
+        missings.push({ enKey, isMissing: !frKeys.includes(enKey) });
     });
 
     const newObj = {};
@@ -30,9 +29,10 @@ async function test() {
     translate.engine = "google";
 
     const flatedEn = flat.flatten(en)
+    const flatedFr = flat.flatten(fr)
 
     let done = 0;
-    var bar = new ProgressBar('translating [:bar] :rate/translatePerSeconds :percent ', {
+    var bar = new ProgressBar('translating [:bar] :rate/fixPerSecond :percent ', {
         complete: '=',
         incomplete: ' ',
         width: 100,
@@ -42,9 +42,15 @@ async function test() {
         if (enKeys.find((j) => j.startsWith(i.enKey + "."))) {
             newObj[i.enKey] = {}
         } else {
-            let text = flatedEn[Object.keys(flatedEn).find(j => j === i.enKey)]
-            text = await translate(text, 'fr')
-            newObj[i.enKey] = text
+            if (i.isMissing) {
+                let text = flatedEn[Object.keys(flatedEn).find(j => j === i.enKey)]
+                text = await translate(text, 'fr')
+                newObj[i.enKey] = text
+            } else {
+                let text = flatedEn[Object.keys(flatedFr).find(j => j === i.enKey)]
+                // text = await translate(text, 'fr')
+                newObj[i.enKey] = text
+            }
         }
         done++;
         bar.update(done / missings.length)
