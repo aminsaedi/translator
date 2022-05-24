@@ -1,9 +1,16 @@
+#!/usr/bin/env node
+
+process.removeAllListeners("warning")
+
 import en from "./en.js";
 import fr from "./fr.js";
 import flat from "flat";
 import translate from "translate";
 import ProgressBar from 'progress'
 import fs from 'fs'
+
+const mode = process.argv?.[2] !== "-f" ? "missing" : "full"
+
 
 function objectDeepKeys(obj) {
     return Object.keys(obj)
@@ -32,7 +39,7 @@ async function test() {
     const flatedFr = flat.flatten(fr)
 
     let done = 0;
-    var bar = new ProgressBar('translating [:bar] :rate/fixPerSecond :percent ', {
+    var bar = new ProgressBar('fix missigs [:bar] :rate/fixPerSecond :percent ', {
         complete: '=',
         incomplete: ' ',
         width: 100,
@@ -46,8 +53,8 @@ async function test() {
                 let text = flatedEn[Object.keys(flatedEn).find(j => j === i.enKey)]
                 text = await translate(text, 'fr')
                 newObj[i.enKey] = text
-            } else {
-                let text = flatedEn[Object.keys(flatedFr).find(j => j === i.enKey)]
+            } else if (!i.isMissing && mode === "full") {
+                let text = flatedFr[Object.keys(flatedFr).find(j => j === i.enKey)]
                 // text = await translate(text, 'fr')
                 newObj[i.enKey] = text
             }
