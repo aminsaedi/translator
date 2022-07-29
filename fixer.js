@@ -4,6 +4,7 @@ process.removeAllListeners("warning")
 
 import en from "./en.js";
 import fr from "./fr.js";
+import menu from './menuInput.js'
 import flat from "flat";
 import translate from "translate";
 import ProgressBar from 'progress'
@@ -21,6 +22,7 @@ function objectDeepKeys(obj) {
 
 
 async function test() {
+   try {
     const enKeys = objectDeepKeys(en);
 
     const frKeys = objectDeepKeys(fr);
@@ -39,7 +41,7 @@ async function test() {
     const flatedFr = flat.flatten(fr)
 
     let done = 0;
-    var bar = new ProgressBar('fix missigs [:bar] :rate/fixPerSecond :percent ', {
+    var bar = new ProgressBar(`fix ${mode} [:bar] :rate/fixPerSecond :percent `, {
         complete: '=',
         incomplete: ' ',
         width: 100,
@@ -65,10 +67,38 @@ async function test() {
 
 
     fs.writeFile('output.json', JSON.stringify(
-        flat.unflatten(newObj),
+        flat.unflatten(newObj,{object: false}),
+        null,
+        4
+    ), 'utf8', () => console.log("Done!"));
+   } catch (error) {
+    console.error(error)
+   }
+}
+
+async function fixMenu() {
+    const result = []
+    for (const item of menu) {
+        const enName = item.name.find(i => i.language === "en-US")?.text;
+	const frNames = item.name.filter(i => i.language === "fr-CA")
+        if (frNames.length > 1)
+	    {
+		    const secondFrNameIndex = item.name.findIndex(i => i.language === 'fr-CA')
+		    item.name.splice(secondFrNameIndex, 1)
+	    }
+        if (enName && frNames.length === 0) {
+            const frName = await translate(enName, 'fr')
+            item.name.push({ language: "fr-CA", text: frName })
+        }
+        result.push(item)
+    }
+    fs.writeFile('menuFr.json', JSON.stringify(
+        result,
         null,
         4
     ), 'utf8', () => console.log("Done!"));
 }
 
-test();
+fixMenu();
+
+// test()
